@@ -112,11 +112,18 @@ void main()
         return ret;
     }
 
-    auto wte = matrix(vocab_size, n_embd);
-    auto wpe = matrix(block_size, n_embd);
-    auto lm_head = matrix(vocab_size, n_embd);
-
     alias Matrix = Value[][];
+    //TODO: return auto range
+    static Value[] getAllParams(Matrix matrix) => matrix.join.array;
+
+    Matrix wte = matrix(vocab_size, n_embd);
+    Matrix wpe = matrix(block_size, n_embd);
+    Matrix lm_head = matrix(vocab_size, n_embd);
+
+    Value[] params = [
+        getAllParams(wte), getAllParams(wpe), getAllParams(lm_head),
+    ].join.array;
+
     class Layer
     {
         union
@@ -133,6 +140,8 @@ void main()
             }
 
             private Matrix[6] allMat;
+
+            Value[] getAll() => getAllParams(allMat[].join);
         }
 
         this()
@@ -146,18 +155,14 @@ void main()
             mlp_fc1 = matrix(4 * n_embd, n_embd);
             mlp_fc2 = matrix(n_embd, 4 * n_embd);
         }
-
-        private Value[] getAllParams() => allMat[].join.join.array;
     }
 
     Layer[n_layer] layers;
     foreach(ref l; layers)
+    {
         l = new Layer;
-
-    //~ foreach(ref l; layers)
-        //~ writeln(l.attn_wq[1][2].data);
-
-    //~ auto params =
+        params ~= l.getAll;
+    }
 
 //~ for i in range(n_layer):
     //~ state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)
