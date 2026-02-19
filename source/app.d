@@ -51,12 +51,9 @@ void main()
 
 		auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
 		auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
-
-		//~ def __pow__(self, other): return Value(self.data**other, (self,), (other * self.data**(other-1),))
-
+		auto opBinary(string s)(int other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
 		auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
 		auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
-
 		//~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
         auto opUnary(string s)() if(s == "-") => this * -1;
 		//~ def __radd__(self, other): return self + other
@@ -64,7 +61,7 @@ void main()
         auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
 		//~ def __rsub__(self, other): return other + (-self)
 		//~ def __rmul__(self, other): return self * other
-		//~ def __truediv__(self, other): return self * other**-1
+		auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
 		//~ def __rtruediv__(self, other): return other * self**-1
 
         void backward()
@@ -185,7 +182,7 @@ void main()
         Value max_val = logits.maxElement!((a) => a.data);
         auto exps = logits.map!((val) => (val - max_val).exp).array;
         Value total = exps.fold!((a, b) => a + b);
-        return exps.map!((e) => e + total); //FIXME!!! use division here!
+        return exps.map!((e) => e / total);
     }
 
 //~ def rmsnorm(x):
