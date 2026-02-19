@@ -1,10 +1,12 @@
 /*
-The most atomic way to train and run inference for a GPT in pure, dependency-free Python.
+The most atomic way to train and run inference for a GPT in pure.
 This file is the complete algorithm.
 Everything else is just efficiency.
 
 @karpathy
 https://karpathy.github.io/2026/02/12/microgpt/
+
+D language version
 */
 
 import std;
@@ -28,50 +30,57 @@ void main()
 	const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
 	writeln("vocab size: ", vocab_size);
 
-//~ # Let there be Autograd to recursively apply the chain rule through a computation graph
-//~ class Value:
-    //~ __slots__ = ('data', 'grad', '_children', '_local_grads') # Python optimization for memory usage
+	// Let there be Autograd to recursively apply the chain rule through a computation graph
+	static class Value
+	{
+		float data;
+		float grad;
+		private Value[] _children; //TODO: remove underscore
+		private Value[] _local_grads;
 
-    //~ def __init__(self, data, children=(), local_grads=()):
-        //~ self.data = data                # scalar value of this node calculated during forward pass
-        //~ self.grad = 0                   # derivative of the loss w.r.t. this node, calculated in backward pass
-        //~ self._children = children       # children of this node in the computation graph
-        //~ self._local_grads = local_grads # local derivative of this node w.r.t. its children
+		this(float data, Value[] children = null, Value[] local_grads = null)
+		{
+			this.data = data;                // scalar value of this node calculated during forward pass
+			this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
+			this._children = children;       // children of this node in the computation graph
+			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
+		}
 
-    //~ def __add__(self, other):
-        //~ other = other if isinstance(other, Value) else Value(other)
-        //~ return Value(self.data + other.data, (self, other), (1, 1))
+		//~ def __add__(self, other):
+			//~ other = other if isinstance(other, Value) else Value(other)
+			//~ return Value(self.data + other.data, (self, other), (1, 1))
 
-    //~ def __mul__(self, other):
-        //~ other = other if isinstance(other, Value) else Value(other)
-        //~ return Value(self.data * other.data, (self, other), (other.data, self.data))
+		//~ def __mul__(self, other):
+			//~ other = other if isinstance(other, Value) else Value(other)
+			//~ return Value(self.data * other.data, (self, other), (other.data, self.data))
 
-    //~ def __pow__(self, other): return Value(self.data**other, (self,), (other * self.data**(other-1),))
-    //~ def log(self): return Value(math.log(self.data), (self,), (1/self.data,))
-    //~ def exp(self): return Value(math.exp(self.data), (self,), (math.exp(self.data),))
-    //~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
-    //~ def __neg__(self): return self * -1
-    //~ def __radd__(self, other): return self + other
-    //~ def __sub__(self, other): return self + (-other)
-    //~ def __rsub__(self, other): return other + (-self)
-    //~ def __rmul__(self, other): return self * other
-    //~ def __truediv__(self, other): return self * other**-1
-    //~ def __rtruediv__(self, other): return other * self**-1
+		//~ def __pow__(self, other): return Value(self.data**other, (self,), (other * self.data**(other-1),))
+		//~ def log(self): return Value(math.log(self.data), (self,), (1/self.data,))
+		//~ def exp(self): return Value(math.exp(self.data), (self,), (math.exp(self.data),))
+		//~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
+		//~ def __neg__(self): return self * -1
+		//~ def __radd__(self, other): return self + other
+		//~ def __sub__(self, other): return self + (-other)
+		//~ def __rsub__(self, other): return other + (-self)
+		//~ def __rmul__(self, other): return self * other
+		//~ def __truediv__(self, other): return self * other**-1
+		//~ def __rtruediv__(self, other): return other * self**-1
 
-    //~ def backward(self):
-        //~ topo = []
-        //~ visited = set()
-        //~ def build_topo(v):
-            //~ if v not in visited:
-                //~ visited.add(v)
-                //~ for child in v._children:
-                    //~ build_topo(child)
-                //~ topo.append(v)
-        //~ build_topo(self)
-        //~ self.grad = 1
-        //~ for v in reversed(topo):
-            //~ for child, local_grad in zip(v._children, v._local_grads):
-                //~ child.grad += local_grad * v.grad
+		//~ def backward(self):
+			//~ topo = []
+			//~ visited = set()
+			//~ def build_topo(v):
+				//~ if v not in visited:
+					//~ visited.add(v)
+					//~ for child in v._children:
+						//~ build_topo(child)
+					//~ topo.append(v)
+			//~ build_topo(self)
+			//~ self.grad = 1
+			//~ for v in reversed(topo):
+				//~ for child, local_grad in zip(v._children, v._local_grads):
+					//~ child.grad += local_grad * v.grad
+	}
 
 //~ # Initialize the parameters, to store the knowledge of the model
 //~ n_layer = 1     # depth of the transformer neural network (number of layers)
