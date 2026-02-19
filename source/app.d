@@ -6,7 +6,8 @@ Everything else is just efficiency.
 @karpathy
 https://karpathy.github.io/2026/02/12/microgpt/
 
-D language version
+D language version by Denis Feklushkin
+https://github.com/denizzzka/
 */
 
 import std;
@@ -176,11 +177,13 @@ void main()
         ).array;
     }
 
-//~ def softmax(logits):
-    //~ max_val = max(val.data for val in logits)
-    //~ exps = [(val - max_val).exp() for val in logits]
-    //~ total = sum(exps)
-    //~ return [e / total for e in exps]
+    auto softmax(Value[] logits)
+    {
+        Value max_val = logits.maxElement!((a) => a.data);
+        auto exps = logits.map!((val) => (val + max_val).exp).array; //FIXME!!! use minus here!
+        Value total = exps.fold!((a, b) => a + b);
+        return exps.map!((e) => e + total); //FIXME!!! use division here!
+    }
 
 //~ def rmsnorm(x):
     //~ ms = sum(xi * xi for xi in x) / len(x)
