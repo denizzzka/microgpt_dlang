@@ -36,15 +36,17 @@ void main()
 		float data;
 		float grad;
 		private Value[] _children; //TODO: remove underscore
-		private Value[] _local_grads;
+		private float[] _local_grads;
 
-		this(float data, Value[] children = null, Value[] local_grads = null)
+		this(float data, Value[] children = null, float[] local_grads = null)
 		{
 			this.data = data;                // scalar value of this node calculated during forward pass
 			this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
 			this._children = children;       // children of this node in the computation graph
 			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
 		}
+
+		auto opBinary(string s)(in Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
 
 		//~ def __add__(self, other):
 			//~ other = other if isinstance(other, Value) else Value(other)
