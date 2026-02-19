@@ -14,10 +14,10 @@ import std;
 
 void main()
 {
-	// Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
 	auto rnd = MinstdRand0(42);
 
-	//TODO: original code performs http-request, implement same
+	// Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
+	//TODO: original code performs http-request, implement same?
 	const docs = readText("names.txt")
 		.splitLines
 		.randomShuffle(rnd)
