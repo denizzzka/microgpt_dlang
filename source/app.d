@@ -46,8 +46,8 @@ void main()
 			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
 		}
 
-		auto opBinary(string s)(in Value other) const if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
-		auto opBinary(string s)(in Value other) const if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
+		auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+		auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
 
 		//~ def __pow__(self, other): return Value(self.data**other, (self,), (other * self.data**(other-1),))
 
@@ -165,10 +165,20 @@ void main()
 
     writeln("num params: ", params.length);
 
-//~ # Define the model architecture: a function mapping tokens and parameters to logits over what comes next
-//~ # Follow GPT-2, blessed among the GPTs, with minor differences: layernorm -> rmsnorm, no biases, GeLU -> ReLU
-//~ def linear(x, w):
-    //~ return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
+    // Define the model architecture: a function mapping tokens and parameters to logits over what comes next
+    // Follow GPT-2, blessed among the GPTs, with minor differences: layernorm -> rmsnorm, no biases, GeLU -> ReLU
+    static Value[] linear(Value[] x, Matrix w)
+    {
+        Value[] ret;
+        ret.length = w.length;
+
+        foreach(i, ref r; ret)
+            r = zip(x, w[i])
+                .map!((e) => e[0] * e[1])
+                .fold!((a, b) => a + b);
+
+        return ret;
+    }
 
 //~ def softmax(logits):
     //~ max_val = max(val.data for val in logits)
