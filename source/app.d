@@ -14,55 +14,55 @@ import std;
 
 void main()
 {
-	auto rnd = MinstdRand0(42);
+    auto rnd = MinstdRand0(42);
 
-	// Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
-	//TODO: original code performs http-request, implement same?
-	const docs = readText("names.txt")
-		.splitLines
-		.randomShuffle(rnd)
-		.array;
+    // Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
+    //TODO: original code performs http-request, implement same?
+    const docs = readText("names.txt")
+        .splitLines
+        .randomShuffle(rnd)
+        .array;
 
-	writeln("num docs: ", docs.length);
+    writeln("num docs: ", docs.length);
 
-	// Let there be a Tokenizer to translate strings to sequences of integers ("tokens") and back
-	const uchars = docs.join.array.sort.uniq.array;
-	const BOS = uchars.length; /// token id for a special Beginning of Sequence (BOS) token
-	const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
-	writeln("vocab size: ", vocab_size);
+    // Let there be a Tokenizer to translate strings to sequences of integers ("tokens") and back
+    const uchars = docs.join.array.sort.uniq.array;
+    const BOS = uchars.length; /// token id for a special Beginning of Sequence (BOS) token
+    const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
+    writeln("vocab size: ", vocab_size);
 
-	// Let there be Autograd to recursively apply the chain rule through a computation graph
-	static class Value
-	{
-		float data;
-		float grad;
-		private Value[] _children; //TODO: remove underscore
-		private float[] _local_grads;
+    // Let there be Autograd to recursively apply the chain rule through a computation graph
+    static class Value
+    {
+        float data;
+        float grad;
+        private Value[] _children; //TODO: remove underscore
+        private float[] _local_grads;
 
-		this(float data, Value[] children = null, float[] local_grads = null)
-		{
-			this.data = data;                // scalar value of this node calculated during forward pass
-			this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
-			this._children = children;       // children of this node in the computation graph
-			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
-		}
+        this(float data, Value[] children = null, float[] local_grads = null)
+        {
+            this.data = data;                // scalar value of this node calculated during forward pass
+            this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
+            this._children = children;       // children of this node in the computation graph
+            this._local_grads = local_grads; // local derivative of this node w.r.t. its children
+        }
 
-		auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
+        auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
 
-		auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
-		auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
-		auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
-		auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
-		auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
-		//~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
+        auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+        auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
+        auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
+        auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
+        auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
+        //~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
         auto opUnary(string s)() if(s == "-") => this * -1;
-		//~ def __radd__(self, other): return self + other
-		//~ def __sub__(self, other): return self + (-other)
+        //~ def __radd__(self, other): return self + other
+        //~ def __sub__(self, other): return self + (-other)
         auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
-		//~ def __rsub__(self, other): return other + (-self)
-		//~ def __rmul__(self, other): return self * other
-		auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
-		//~ def __rtruediv__(self, other): return other * self**-1
+        //~ def __rsub__(self, other): return other + (-self)
+        //~ def __rmul__(self, other): return self * other
+        auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
+        //~ def __rtruediv__(self, other): return other * self**-1
 
         void backward()
         {
@@ -88,7 +88,7 @@ void main()
                 foreach (i, child; v._children)
                     child.grad += v._local_grads[i] * v.grad;
         }
-	}
+    }
 
     // Initialize the parameters, to store the knowledge of the model
     const n_layer = 1;      /// depth of the transformer neural network (number of layers)
