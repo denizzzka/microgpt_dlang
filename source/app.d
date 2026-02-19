@@ -89,12 +89,13 @@ void main()
         }
 	}
 
-//~ # Initialize the parameters, to store the knowledge of the model
-//~ n_layer = 1     # depth of the transformer neural network (number of layers)
-//~ n_embd = 16     # width of the network (embedding dimension)
-//~ block_size = 16 # maximum context length of the attention window (note: the longest name is 15 characters)
-//~ n_head = 4      # number of attention heads
-//~ head_dim = n_embd // n_head # derived dimension of each head
+    // Initialize the parameters, to store the knowledge of the model
+    const n_layer = 1;      /// depth of the transformer neural network (number of layers)
+    const n_embd = 16;      /// width of the network (embedding dimension)
+    const block_size = 16;  /// maximum context length of the attention window (note: the longest name is 15 characters)
+    const n_head = 4;       /// number of attention heads
+    const head_dim = n_embd;    ///n_head # derived dimension of each head
+
 //~ matrix = lambda nout, nin, std=0.08: [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
 //~ state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
 //~ for i in range(n_layer):
