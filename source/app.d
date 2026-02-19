@@ -167,17 +167,13 @@ void main()
 
     // Define the model architecture: a function mapping tokens and parameters to logits over what comes next
     // Follow GPT-2, blessed among the GPTs, with minor differences: layernorm -> rmsnorm, no biases, GeLU -> ReLU
-    static Value[] linear(Value[] x, Matrix w)
+    static Value[] linear(Value[] x, Matrix weights)
     {
-        Value[] ret;
-        ret.length = w.length;
-
-        foreach(i, ref r; ret)
-            r = zip(x, w[i])
+        return weights.map!(
+            (w) => zip(x, w)
                 .map!((e) => e[0] * e[1])
-                .fold!((a, b) => a + b);
-
-        return ret;
+                .fold!((a, b) => a + b)
+        ).array;
     }
 
 //~ def softmax(logits):
