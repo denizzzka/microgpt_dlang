@@ -46,19 +46,14 @@ void main()
 			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
 		}
 
-		auto opBinary(string s)(in Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
-
-		//~ def __add__(self, other):
-			//~ other = other if isinstance(other, Value) else Value(other)
-			//~ return Value(self.data + other.data, (self, other), (1, 1))
-
-		//~ def __mul__(self, other):
-			//~ other = other if isinstance(other, Value) else Value(other)
-			//~ return Value(self.data * other.data, (self, other), (other.data, self.data))
+		auto opBinary(string s)(in Value other) const if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+		auto opBinary(string s)(in Value other) const if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
 
 		//~ def __pow__(self, other): return Value(self.data**other, (self,), (other * self.data**(other-1),))
-		//~ def log(self): return Value(math.log(self.data), (self,), (1/self.data,))
-		//~ def exp(self): return Value(math.exp(self.data), (self,), (math.exp(self.data),))
+
+		auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
+		auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
+
 		//~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
 		//~ def __neg__(self): return self * -1
 		//~ def __radd__(self, other): return self + other
