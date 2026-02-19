@@ -47,6 +47,8 @@ void main()
 			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
 		}
 
+		auto opBinary(string s)(float other) => opBinary!s(new Value(other));
+
 		auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
 		auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
 
