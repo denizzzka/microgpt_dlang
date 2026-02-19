@@ -96,7 +96,8 @@ void main()
     const n_head = 4;       /// number of attention heads
     const head_dim = n_embd;    ///n_head # derived dimension of each head
 
-    static Value[][] matrix(size_t nout, uint nin, float std=0.08)
+    alias Matrix = Value[][];
+    static Matrix matrix(size_t nout, uint nin, float std=0.08)
     {
         Value[][] ret;
         ret.length = nout;
@@ -112,8 +113,7 @@ void main()
         return ret;
     }
 
-    alias Matrix = Value[][];
-    static auto getAllParams(Matrix matrix) => matrix.join;
+    static auto getAllParams(Matrix matrix) => matrix.joiner;
 
     Matrix wte = matrix(vocab_size, n_embd);
     Matrix wpe = matrix(block_size, n_embd);
@@ -128,7 +128,7 @@ void main()
     {
         union
         {
-            static struct
+            struct
             {
                 Matrix attn_wq;
                 Matrix attn_wk;
@@ -142,7 +142,7 @@ void main()
             private Matrix[6] allMat;
         }
 
-        Value[] getAll() => getAllParams(allMat[].join);
+        Value[] getAll() => allMat[].joiner.join;
 
         this()
         {
