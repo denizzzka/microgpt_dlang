@@ -96,7 +96,7 @@ void main()
     const n_head = 4;       /// number of attention heads
     const head_dim = n_embd;    ///n_head # derived dimension of each head
 
-    static Value[][] matrix(uint nout, uint nin, float std=0.08)
+    static Value[][] matrix(size_t nout, uint nin, float std=0.08)
     {
         Value[][] ret;
         ret.length = nout;
@@ -106,13 +106,59 @@ void main()
             row.length = nin;
 
             foreach(ref cell; row)
-                cell = new Value(normalDistribution(std));
+                cell = new Value(normalDistribution(std)); //FIXME: add random!
         }
 
         return ret;
     }
 
-//~ state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
+    auto wte = matrix(vocab_size, n_embd);
+    auto wpe = matrix(block_size, n_embd);
+    auto lm_head = matrix(vocab_size, n_embd);
+
+    alias Matrix = Value[][];
+    class Layer
+    {
+        union
+        {
+            static struct
+            {
+                Matrix attn_wq;
+                Matrix attn_wk;
+                Matrix attn_wv;
+                Matrix attn_wo;
+
+                Matrix mlp_fc1;
+                Matrix mlp_fc2;
+            }
+
+            private Matrix[6] allMat;
+        }
+
+        this()
+        {
+            writeln("init ctor");
+            attn_wq = matrix(n_embd, n_embd);
+            attn_wk = matrix(n_embd, n_embd);
+            attn_wv = matrix(n_embd, n_embd);
+            attn_wo = matrix(n_embd, n_embd);
+
+            mlp_fc1 = matrix(4 * n_embd, n_embd);
+            mlp_fc2 = matrix(n_embd, 4 * n_embd);
+        }
+
+        private Value[] getAllParams() => allMat[].join.join.array;
+    }
+
+    Layer[n_layer] layers;
+    foreach(ref l; layers)
+        l = new Layer;
+
+    //~ foreach(ref l; layers)
+        //~ writeln(l.attn_wq[1][2].data);
+
+    //~ auto params =
+
 //~ for i in range(n_layer):
     //~ state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)
     //~ state_dict[f'layer{i}.attn_wk'] = matrix(n_embd, n_embd)
