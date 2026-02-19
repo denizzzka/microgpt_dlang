@@ -47,11 +47,11 @@ void main()
 			this._local_grads = local_grads; // local derivative of this node w.r.t. its children
 		}
 
-		auto opBinary(string s)(float other) => opBinary!s(new Value(other));
+		auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
 
 		auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
 		auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
-		auto opBinary(string s)(int other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
+		auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
 		auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
 		auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
 		//~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
@@ -173,7 +173,7 @@ void main()
         return weights.map!(
             (w) => zip(x, w)
                 .map!((e) => e[0] * e[1])
-                .fold!((a, b) => a + b)
+                .sumVals
         ).array;
     }
 
@@ -181,14 +181,16 @@ void main()
     {
         Value max_val = logits.maxElement!((a) => a.data);
         auto exps = logits.map!((val) => (val - max_val).exp).array;
-        Value total = exps.fold!((a, b) => a + b);
+        Value total = exps.sumVals;
         return exps.map!((e) => e / total);
     }
 
-//~ def rmsnorm(x):
-    //~ ms = sum(xi * xi for xi in x) / len(x)
-    //~ scale = (ms + 1e-5) ** -0.5
-    //~ return [xi * scale for xi in x]
+    Value[] rmsnorm(Value[] x)
+    {
+        auto ms = x.map!"a*a".sumVals / x.length;
+        auto scale = (ms + 1e-5) ^^ -0.5; //TODO: use float.min_normal instead of 1e-5?
+        return x.map!((a) => a * scale).array;
+    }
 
 //~ def gpt(token_id, pos_id, keys, values):
     //~ tok_emb = state_dict['wte'][token_id] # token embedding
@@ -284,3 +286,5 @@ void main()
         //~ sample.append(uchars[token_id])
     //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
 }
+
+auto sumVals(T)(T range) => range.fold!((a, b) => a + b);
