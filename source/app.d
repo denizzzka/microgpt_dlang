@@ -63,20 +63,30 @@ void main()
 		//~ def __truediv__(self, other): return self * other**-1
 		//~ def __rtruediv__(self, other): return other * self**-1
 
-		//~ def backward(self):
-			//~ topo = []
-			//~ visited = set()
-			//~ def build_topo(v):
-				//~ if v not in visited:
-					//~ visited.add(v)
-					//~ for child in v._children:
-						//~ build_topo(child)
-					//~ topo.append(v)
-			//~ build_topo(self)
-			//~ self.grad = 1
-			//~ for v in reversed(topo):
-				//~ for child, local_grad in zip(v._children, v._local_grads):
-					//~ child.grad += local_grad * v.grad
+        void backward()
+        {
+            Value[] topo;
+            bool[const Value] visited;
+
+            void buildTopo(Value v)
+            {
+                if(!(v in visited))
+                {
+                    visited[v] = true;
+
+                    foreach(child; v._children)
+                        buildTopo(child);
+
+                    topo ~= v;
+                }
+            }
+            buildTopo(this);
+
+            grad = 1;
+            foreach_reverse (v; topo)
+                foreach (i, child; v._children)
+                    child.grad += v._local_grads[i] * v.grad;
+        }
 	}
 
 //~ # Initialize the parameters, to store the knowledge of the model
