@@ -24,11 +24,9 @@ void main()
 
 	// Let there be a Tokenizer to translate strings to sequences of integers ("tokens") and back
 	const uchars = docs.join.array.sort.uniq.array;
-
-//~ uchars = sorted(set(''.join(docs))) # unique characters in the dataset become token ids 0..n-1
-//~ BOS = len(uchars) # token id for a special Beginning of Sequence (BOS) token
-//~ vocab_size = len(uchars) + 1 # total number of unique tokens, +1 is for BOS
-//~ print(f"vocab size: {vocab_size}")
+	const BOS = uchars.length; /// token id for a special Beginning of Sequence (BOS) token
+	const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
+	writeln("vocab size: ", vocab_size);
 
 //~ # Let there be Autograd to recursively apply the chain rule through a computation graph
 //~ class Value:
