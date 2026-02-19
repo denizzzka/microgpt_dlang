@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/microgpt
+microgpt.so
+microgpt.dylib
+microgpt.dll
+microgpt.a
+microgpt.lib
+microgpt-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
