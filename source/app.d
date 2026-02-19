@@ -113,16 +113,16 @@ void main()
     }
 
     alias Matrix = Value[][];
-    //TODO: return auto range
-    static Value[] getAllParams(Matrix matrix) => matrix.join.array;
+    static auto getAllParams(Matrix matrix) => matrix.join;
 
     Matrix wte = matrix(vocab_size, n_embd);
     Matrix wpe = matrix(block_size, n_embd);
     Matrix lm_head = matrix(vocab_size, n_embd);
 
+    /// flatten params into a single list
     Value[] params = [
         getAllParams(wte), getAllParams(wpe), getAllParams(lm_head),
-    ].join.array;
+    ].join;
 
     class Layer
     {
@@ -140,13 +140,12 @@ void main()
             }
 
             private Matrix[6] allMat;
-
-            Value[] getAll() => getAllParams(allMat[].join);
         }
+
+        Value[] getAll() => getAllParams(allMat[].join);
 
         this()
         {
-            writeln("init ctor");
             attn_wq = matrix(n_embd, n_embd);
             attn_wk = matrix(n_embd, n_embd);
             attn_wv = matrix(n_embd, n_embd);
@@ -164,15 +163,7 @@ void main()
         params ~= l.getAll;
     }
 
-//~ for i in range(n_layer):
-    //~ state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)
-    //~ state_dict[f'layer{i}.attn_wk'] = matrix(n_embd, n_embd)
-    //~ state_dict[f'layer{i}.attn_wv'] = matrix(n_embd, n_embd)
-    //~ state_dict[f'layer{i}.attn_wo'] = matrix(n_embd, n_embd)
-    //~ state_dict[f'layer{i}.mlp_fc1'] = matrix(4 * n_embd, n_embd)
-    //~ state_dict[f'layer{i}.mlp_fc2'] = matrix(n_embd, 4 * n_embd)
-//~ params = [p for mat in state_dict.values() for row in mat for p in row] # flatten params into a single list[Value]
-//~ print(f"num params: {len(params)}")
+    writeln("num params: ", params.length);
 
 //~ # Define the model architecture: a function mapping tokens and parameters to logits over what comes next
 //~ # Follow GPT-2, blessed among the GPTs, with minor differences: layernorm -> rmsnorm, no biases, GeLU -> ReLU
