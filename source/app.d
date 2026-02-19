@@ -95,7 +95,7 @@ void main()
     const n_embd = 16;      /// width of the network (embedding dimension)
     const block_size = 16;  /// maximum context length of the attention window (note: the longest name is 15 characters)
     const n_head = 4;       /// number of attention heads
-    const head_dim = n_embd;    ///n_head # derived dimension of each head
+    const head_dim = n_embd / n_head;   /// derived dimension of each head
 
     alias Matrix = Value[][];
     static Matrix matrix(size_t nout, uint nin, float std=0.08)
