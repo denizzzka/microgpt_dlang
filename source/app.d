@@ -96,7 +96,22 @@ void main()
     const n_head = 4;       /// number of attention heads
     const head_dim = n_embd;    ///n_head # derived dimension of each head
 
-//~ matrix = lambda nout, nin, std=0.08: [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
+    static Value[][] matrix(uint nout, uint nin, float std=0.08)
+    {
+        Value[][] ret;
+        ret.length = nout;
+
+        foreach(ref row; ret)
+        {
+            row.length = nin;
+
+            foreach(ref cell; row)
+                cell = new Value(normalDistribution(std));
+        }
+
+        return ret;
+    }
+
 //~ state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
 //~ for i in range(n_layer):
     //~ state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)
