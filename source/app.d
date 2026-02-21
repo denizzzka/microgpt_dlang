@@ -267,9 +267,10 @@ void main()
     /// second moment buffer
     auto v = new float[params.length]; v[] = 0;
 
-//~ # Repeat in sequence
-//~ num_steps = 1000 # number of training steps
-//~ for step in range(num_steps):
+    // Repeat in sequence
+    const num_steps = 1000; /// number of training steps
+    foreach(step; 0 .. num_steps)
+    {
 
     //~ # Take single document, tokenize it, surround it with BOS special token on both sides
     //~ doc = docs[step % len(docs)]
@@ -301,6 +302,7 @@ void main()
         //~ p.grad = 0
 
     //~ print(f"step {step+1:4d} / {num_steps:4d} | loss {loss.data:.4f}", end='\r')
+    }
 
 //~ # Inference: may the model babble back to us
 //~ temperature = 0.5 # in (0, 1], control the "creativity" of generated text, low to high
