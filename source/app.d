@@ -206,9 +206,10 @@ void main()
             auto x_residual = x;
             x = rmsnorm(x).array;
 
-        //~ q = linear(x, state_dict[f'layer{li}.attn_wq'])
-        //~ k = linear(x, state_dict[f'layer{li}.attn_wk'])
-        //~ v = linear(x, state_dict[f'layer{li}.attn_wv'])
+            auto q = linear(x, li.attn_wq);
+            auto k = linear(x, li.attn_wk);
+            auto v = linear(x, li.attn_wv);
+
         //~ keys[li].append(k)
         //~ values[li].append(v)
         //~ x_attn = []
