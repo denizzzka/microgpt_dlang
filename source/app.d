@@ -354,7 +354,7 @@ void main()
 
 size_t weightedRandomIdx(RNG)(Value[] weights, ref RNG rng)
 {
-    float r = uniform!"[]"(0.0f, weights.sumVals.data, rng);
+    float r = uniform!"[]"(0.0f, weights.sumValsMT.data, rng);
     float curr = 0;
 
     foreach (i, w; weights)
@@ -381,3 +381,13 @@ float randomGauss(RNG)(ref RNG rng, float std)
 }
 
 auto sumVals(T)(T range) pure => range.fold!((a, b) => a + b);
+
+auto sumValsMT(Value[] arr) => sumValsMT(arr, arr.length / taskPool.size);
+
+auto sumValsMT(T)(T range, size_t chunkSize)
+{
+    auto to_process = range.chunks(chunkSize);
+    auto results = taskPool.amap!sumVals(to_process);
+
+    return results.sumVals;
+}
