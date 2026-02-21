@@ -298,10 +298,11 @@ void main()
             losses ~= loss_t;
         }
 
-        //~ loss = (1 / n) * sum(losses) # final average loss over the document sequence. May yours be low.
+        /// final average loss over the document sequence. May yours be low.
+        auto loss = losses.sumVals / n;
 
-    //~ # Backward the loss, calculating the gradients with respect to all model parameters
-    //~ loss.backward()
+        // Backward the loss, calculating the gradients with respect to all model parameters
+        loss.backward();
 
     //~ # Adam optimizer update: update the model parameters based on the corresponding gradients
     //~ lr_t = learning_rate * (1 - step / num_steps) # linear learning rate decay
