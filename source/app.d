@@ -54,7 +54,7 @@ void main()
         auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
         auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
         auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
-        //~ def relu(self): return Value(max(0, self.data), (self,), (float(self.data > 0),))
+        auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
         auto opUnary(string s)() if(s == "-") => this * -1;
         //~ def __radd__(self, other): return self + other
         //~ def __sub__(self, other): return self + (-other)
@@ -185,6 +185,7 @@ void main()
         return exps.map!((e) => e / total);
     }
 
+    //TODO: maybe it is worth to return array
     static auto rmsnorm(R)(R x) pure
     {
         auto ms = x.map!"a*a".sumVals / x.length;
@@ -246,13 +247,13 @@ void main()
             x = linear(x_attn, li.attn_wo);
             x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
 
-        //~ # 2) MLP block
-        //~ x_residual = x
-        //~ x = rmsnorm(x)
-        //~ x = linear(x, state_dict[f'layer{li}.mlp_fc1'])
-        //~ x = [xi.relu() for xi in x]
-        //~ x = linear(x, state_dict[f'layer{li}.mlp_fc2'])
-        //~ x = [a + b for a, b in zip(x, x_residual)]
+            // 2) MLP block
+            x_residual = x;
+            x = rmsnorm(x).array;
+            x = linear(x, li.mlp_fc1);
+            x = x.map!((xi) => xi.relu()).array;
+            x = linear(x, li.mlp_fc2);
+            x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
         }
 
     //~ logits = linear(x, state_dict['lm_head'])
