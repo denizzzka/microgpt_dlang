@@ -192,7 +192,6 @@ void main()
         return x.map!((a) => a * scale);
     }
 
-//~ def gpt(token_id, pos_id, keys, values):
     auto gpt(in ushort token_id, in ushort pos_id, Value[] keys, Value[] values)
     {
         auto tok_emb = wte[token_id];
@@ -291,6 +290,16 @@ void main()
     //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
 }
 
-float randomGauss(RNG)(ref RNG rng, float std) => normalDistribution(std) * uniform!("[]")(0.0f, 1.0f, rng);
+float randomGauss(RNG)(ref RNG rng, float std)
+{
+    // Box-Muller method
+    import std.math.exponential: logf = log;
+
+    const u1 = uniform!("(]")(0.0f, 1.0f, rng);
+    const u2 = uniform!("(]")(0.0f, 1.0f, rng);
+    const z = sqrt(-2.0f * logf(u1)) * cos(2.0f * PI * u2);
+
+    return z * std;
+}
 
 auto sumVals(T)(T range) => range.fold!((a, b) => a + b);
