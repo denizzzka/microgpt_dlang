@@ -232,9 +232,13 @@ void main()
                     attn_logits ~= s / divider;
                 }
 
-                //~ attn_weights = softmax(attn_logits)
-                //~ head_out = [sum(attn_weights[t] * v_h[t][j] for t in range(len(v_h))) for j in range(head_dim)]
-                //~ x_attn.extend(head_out)
+                auto attn_weights = softmax(attn_logits);
+                auto head_out = head_dim.iota.map!((j) =>
+                    v_h.length.iota.map!((t) => attn_weights[t] * v_h[t][j])
+                        .sumVals
+                );
+
+                x_attn ~= head_out.array;
             }
         //~ x = linear(x_attn, state_dict[f'layer{li}.attn_wo'])
         //~ x = [a + b for a, b in zip(x, x_residual)]
