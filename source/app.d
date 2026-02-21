@@ -36,15 +36,15 @@ void main()
     {
         float data;
         float grad;
-        private Value[] _children; //TODO: remove underscore
-        private float[] _local_grads;
+        private Value[] children;
+        private float[] local_grads;
 
         this(float data, Value[] children = null, float[] local_grads = null) pure
         {
             this.data = data;                // scalar value of this node calculated during forward pass
             this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
-            this._children = children;       // children of this node in the computation graph
-            this._local_grads = local_grads; // local derivative of this node w.r.t. its children
+            this.children = children;       // children of this node in the computation graph
+            this.local_grads = local_grads; // local derivative of this node w.r.t. its children
         }
 
         auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
@@ -75,7 +75,7 @@ void main()
                 {
                     visited[v] = true;
 
-                    foreach(child; v._children)
+                    foreach(child; v.children)
                         buildTopo(child);
 
                     topo ~= v;
@@ -85,8 +85,8 @@ void main()
 
             grad = 1;
             foreach_reverse (v; topo)
-                foreach (i, child; v._children)
-                    child.grad += v._local_grads[i] * v.grad;
+                foreach (i, child; v.children)
+                    child.grad += v.local_grads[i] * v.grad;
         }
     }
 
