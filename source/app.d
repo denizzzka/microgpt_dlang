@@ -185,18 +185,21 @@ void main()
         return exps.map!((e) => e / total);
     }
 
-    Value[] rmsnorm(Value[] x)
+    auto rmsnorm(R)(R x)
     {
         auto ms = x.map!"a*a".sumVals / x.length;
         auto scale = (ms + 1e-5) ^^ -0.5; //TODO: use float.min_normal instead of 1e-5?
-        return x.map!((a) => a * scale).array;
+        return x.map!((a) => a * scale);
     }
 
 //~ def gpt(token_id, pos_id, keys, values):
-    //~ tok_emb = state_dict['wte'][token_id] # token embedding
-    //~ pos_emb = state_dict['wpe'][pos_id] # position embedding
-    //~ x = [t + p for t, p in zip(tok_emb, pos_emb)] # joint token and position embedding
-    //~ x = rmsnorm(x) # note: not redundant due to backward pass via the residual connection
+    auto gpt(in ushort token_id, in ushort pos_id, Value[] keys, Value[] values)
+    {
+        auto tok_emb = wte[token_id];
+        auto pos_emb = wpe[token_id];
+
+        auto x_ = zip(tok_emb, pos_emb).map!((e) => e[0] + e[1]); // joint token and position embedding
+        auto x = rmsnorm(x_); // note: not redundant due to backward pass via the residual connection
 
     //~ for li in range(n_layer):
         //~ # 1) Multi-head Attention block
@@ -229,6 +232,7 @@ void main()
 
     //~ logits = linear(x, state_dict['lm_head'])
     //~ return logits
+    }
 
 //~ # Let there be Adam, the blessed optimizer and its buffers
 //~ learning_rate, beta1, beta2, eps_adam = 0.01, 0.85, 0.99, 1e-8
