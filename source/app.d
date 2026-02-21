@@ -319,21 +319,27 @@ void main()
         writef("step %4d / %4d | loss %.4f\r", step + 1, num_steps, loss.data);
     }
 
-//~ # Inference: may the model babble back to us
-//~ temperature = 0.5 # in (0, 1], control the "creativity" of generated text, low to high
-//~ print("\n--- inference (new, hallucinated names) ---")
-//~ for sample_idx in range(20):
-    //~ keys, values = [[] for _ in range(n_layer)], [[] for _ in range(n_layer)]
-    //~ token_id = BOS
-    //~ sample = []
-    //~ for pos_id in range(block_size):
-        //~ logits = gpt(token_id, pos_id, keys, values)
-        //~ probs = softmax([l / temperature for l in logits])
-        //~ token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
-        //~ if token_id == BOS:
-            //~ break
-        //~ sample.append(uchars[token_id])
-    //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
+    // Inference: may the model babble back to us
+    const float temperature = 0.5; /// in (0, 1], control the "creativity" of generated text, low to high
+    writef("\n--- inference (new, hallucinated names) ---");
+    foreach(sample_idx; 0 .. 20)
+    {
+        auto keys = new Matrix[n_layer];
+        auto values = new Matrix[n_layer];
+        auto token_id = BOS;
+        string sample;
+        foreach(pos_id; 0 .. block_size)
+        {
+            auto logits = gpt(token_id, pos_id, keys, values);
+            //TODO: can softmax accept a range?
+            auto probs = softmax(logits.map!(l => l / temperature).array);
+            //~ token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
+            //~ if token_id == BOS:
+                //~ break
+            //~ sample.append(uchars[token_id])
+        }
+        //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
+    }
 }
 
 float randomGauss(RNG)(ref RNG rng, float std)
