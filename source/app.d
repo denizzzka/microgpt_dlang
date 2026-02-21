@@ -193,7 +193,7 @@ void main()
         return x.map!((a) => a * scale);
     }
 
-    Value[] gpt(in ushort token_id, in ushort pos_id, Matrix[] keys, Matrix[] values)
+    Value[] gpt(in size_t token_id, in size_t pos_id, Matrix[] keys, Matrix[] values)
     {
         auto tok_emb = wte[token_id];
         auto pos_emb = wpe[token_id];
@@ -281,18 +281,24 @@ void main()
             tokens ~= r;
         }
         tokens ~= BOS;
-        auto n = min(block_size, tokens.length - 1);
+        const n = min(block_size, tokens.length - 1);
+        assert(n > 0);
 
-    //~ # Forward the token sequence through the model, building up the computation graph all the way to the loss
-    //~ keys, values = [[] for _ in range(n_layer)], [[] for _ in range(n_layer)]
-    //~ losses = []
-    //~ for pos_id in range(n):
-        //~ token_id, target_id = tokens[pos_id], tokens[pos_id + 1]
-        //~ logits = gpt(token_id, pos_id, keys, values)
-        //~ probs = softmax(logits)
-        //~ loss_t = -probs[target_id].log()
-        //~ losses.append(loss_t)
-    //~ loss = (1 / n) * sum(losses) # final average loss over the document sequence. May yours be low.
+        // Forward the token sequence through the model, building up the computation graph all the way to the loss
+        auto keys = new Matrix[n_layer];
+        auto values = new Matrix[n_layer];
+        Value[] losses;
+        foreach(pos_id; 0 .. n)
+        {
+            const token_id = tokens[pos_id];
+            const target_id = tokens[pos_id + 1];
+            auto logits = gpt(token_id, pos_id, keys, values);
+            auto probs = softmax(logits);
+            auto loss_t = -probs[target_id].log();
+            losses ~= loss_t;
+        }
+
+        //~ loss = (1 / n) * sum(losses) # final average loss over the document sequence. May yours be low.
 
     //~ # Backward the loss, calculating the gradients with respect to all model parameters
     //~ loss.backward()
