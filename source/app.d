@@ -321,25 +321,44 @@ void main()
 
     // Inference: may the model babble back to us
     const float temperature = 0.5; /// in (0, 1], control the "creativity" of generated text, low to high
-    writef("\n--- inference (new, hallucinated names) ---");
+    writefln("\n--- inference (new, hallucinated names) ---");
     foreach(sample_idx; 0 .. 20)
     {
         auto keys = new Matrix[n_layer];
         auto values = new Matrix[n_layer];
-        auto token_id = BOS;
+        size_t token_id = BOS;
         string sample;
         foreach(pos_id; 0 .. block_size)
         {
             auto logits = gpt(token_id, pos_id, keys, values);
             //TODO: can softmax accept a range?
             auto probs = softmax(logits.map!(l => l / temperature).array);
-            //~ token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
-            //~ if token_id == BOS:
-                //~ break
-            //~ sample.append(uchars[token_id])
+            token_id = probs.array.weightedRandomIdx(rng);
+
+            if(token_id == BOS)
+                break;
+
+            sample ~= uchars[token_id];
         }
-        //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
+
+        writefln("sample %2d: %s", sample_idx + 1, sample);
     }
+}
+
+size_t weightedRandomIdx(Value, RNG)(Value[] weights, ref RNG rng)
+{
+    float r = uniform!"[]"(0.0f, weights.sumVals.data, rng);
+    float curr = 0;
+
+    foreach (i, w; weights)
+    {
+        curr += w.data;
+
+        if (r <= curr)
+            return i;
+    }
+
+    assert(0);
 }
 
 float randomGauss(RNG)(ref RNG rng, float std)
