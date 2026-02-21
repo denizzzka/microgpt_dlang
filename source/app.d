@@ -14,11 +14,14 @@ import std;
 
 void main()
 {
+    const filename = "names.txt";
     auto rng = MinstdRand0(42);
 
-    // Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
-    //TODO: original code performs http-request, implement same?
-    const docs = readText("names.txt")
+    if(!filename.exists)
+        download(`https://raw.githubusercontent.com/karpathy/makemore/988aa59/names.txt`, filename);
+
+    /// Let there be a Dataset of documents (e.g. a list of names)
+    const docs = readText(filename)
         .splitLines
         .randomShuffle(rng)
         .array;
