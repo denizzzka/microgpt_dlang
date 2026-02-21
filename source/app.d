@@ -181,7 +181,7 @@ void main()
         return weights.map!(
             (w) => zip(x, w)
                 .map!((e) => e[0] * e[1])
-                .sumVals
+                .sumValsST
         ).array;
     }
 
@@ -189,14 +189,14 @@ void main()
     {
         Value max_val = logits.maxElement!((a) => a.data);
         auto exps = logits.map!(val => (val - max_val).exp);
-        Value total = exps.sumVals;
+        Value total = exps.sumValsST;
         return exps.map!((e) => e / total);
     }
 
     //TODO: maybe it is worth to return array
     static auto rmsnorm(R)(R x) pure
     {
-        auto ms = x.map!"a*a".sumVals / x.length;
+        auto ms = x.map!"a*a".sumValsST / x.length;
         auto scale = (ms + 1e-5) ^^ -0.5; //TODO: use float.min_normal instead of 1e-5?
         return x.map!((a) => a * scale);
     }
@@ -237,7 +237,7 @@ void main()
                 const divider = head_dim ^^ 0.5f;
                 foreach(t; 0 .. k_h.length)
                 {
-                    auto s = head_dim.iota.map!((j) => q_h[j] * k_h[t][j]).sumVals;
+                    auto s = head_dim.iota.map!((j) => q_h[j] * k_h[t][j]).sumValsST;
                     attn_logits ~= s / divider;
                 }
 
@@ -245,7 +245,7 @@ void main()
                 auto head_out = v_h.map!((vh_j) =>
                     zip(attn_weights, vh_j)
                         .map!((e) => e[0] * e[1])
-                        .sumVals
+                        .sumValsST
                 );
 
                 x_attn ~= head_out.array;
@@ -354,7 +354,7 @@ void main()
 
 size_t weightedRandomIdx(RNG)(Value[] weights, ref RNG rng)
 {
-    float r = uniform!"[]"(0.0f, weights.sumValsMT.data, rng);
+    float r = uniform!"[]"(0.0f, weights.sumVals.data, rng);
     float curr = 0;
 
     foreach (i, w; weights)
@@ -380,14 +380,20 @@ float randomGauss(RNG)(ref RNG rng, float std)
     return z * std;
 }
 
-auto sumVals(T)(T range) pure => range.fold!((a, b) => a + b);
+auto sumValsST(T)(T range) pure => range.fold!((a, b) => a + b);
 
-auto sumValsMT(Value[] arr) => sumValsMT(arr, arr.length / taskPool.size);
+auto sumVals(Value[] arr)
+{
+    if(arr.length > 1000)
+        return sumValsMT(arr, arr.length / taskPool.size);
+    else
+        return sumValsST(arr);
+}
 
 auto sumValsMT(T)(T range, size_t chunkSize)
 {
     auto to_process = range.chunks(chunkSize);
-    auto results = taskPool.amap!sumVals(to_process);
+    auto results = taskPool.amap!sumValsST(to_process);
 
-    return results.sumVals;
+    return results.sumValsST;
 }
