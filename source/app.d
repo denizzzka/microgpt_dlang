@@ -196,7 +196,7 @@ void main()
     Value[] gpt(in size_t token_id, in size_t pos_id, Matrix[] keys, Matrix[] values)
     {
         auto tok_emb = wte[token_id];
-        auto pos_emb = wpe[token_id];
+        auto pos_emb = wpe[pos_id];
 
         auto x_RENAMEME = zip(tok_emb, pos_emb).map!((e) => e[0] + e[1]); // joint token and position embedding
         auto x = rmsnorm(x_RENAMEME).array; // note: not redundant due to backward pass via the residual connection
