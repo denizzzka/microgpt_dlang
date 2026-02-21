@@ -12,6 +12,66 @@ https://github.com/denizzzka/
 
 import std;
 
+/// Let there be Autograd to recursively apply the chain rule through a computation graph
+class Value
+{
+    float data;
+    float grad;
+    private Value[] children;
+    private float[] local_grads;
+
+    this(float data, Value[] children = null, float[] local_grads = null) pure
+    {
+        this.data = data;               // scalar value of this node calculated during forward pass
+        this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
+        this.children = children;       // children of this node in the computation graph
+        this.local_grads = local_grads; // local derivative of this node w.r.t. its children
+    }
+
+    /// Support of "Value x float" operations
+    auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
+
+    auto opUnary(string s)() if(s == "-") => this * -1;
+
+    auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+    auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
+    auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
+    auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
+    auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
+    auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
+    auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
+    auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
+
+    private ulong visitedFlag;
+    private void recursive(void delegate(Value) callOnAllValues, ulong flagNextState)
+    {
+        if(visitedFlag != flagNextState)
+        {
+            visitedFlag = flagNextState;
+
+            foreach(child; children)
+                child.recursive(callOnAllValues, flagNextState);
+
+            callOnAllValues(this);
+        }
+    }
+
+    void backward()
+    {
+        static ulong nextFlagState;
+        nextFlagState++;
+
+        Value[] topo;
+        // Loops over all children Values recursively
+        recursive((v){ topo ~= v; }, nextFlagState);
+
+        grad = 1;
+        foreach_reverse (v; topo)
+            foreach (i, child; v.children)
+                child.grad += v.local_grads[i] * v.grad;
+    }
+}
+
 void main()
 {
     const filename = "names.txt";
@@ -37,66 +97,6 @@ void main()
     const BOS = uchars.length; /// token id for a special Beginning of Sequence (BOS) token
     const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
     writeln("vocab size: ", vocab_size);
-
-    // Let there be Autograd to recursively apply the chain rule through a computation graph
-    static class Value
-    {
-        float data;
-        float grad;
-        private Value[] children;
-        private float[] local_grads;
-
-        this(float data, Value[] children = null, float[] local_grads = null) pure
-        {
-            this.data = data;               // scalar value of this node calculated during forward pass
-            this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
-            this.children = children;       // children of this node in the computation graph
-            this.local_grads = local_grads; // local derivative of this node w.r.t. its children
-        }
-
-        /// Support of "Value x float" operations
-        auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
-
-        auto opUnary(string s)() if(s == "-") => this * -1;
-
-        auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
-        auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
-        auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
-        auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
-        auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
-        auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
-        auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
-        auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
-
-        private ulong visitedFlag;
-        private void recursive(void delegate(Value) callOnAllValues, ulong flagNextState)
-        {
-            if(visitedFlag != flagNextState)
-            {
-                visitedFlag = flagNextState;
-
-                foreach(child; children)
-                    child.recursive(callOnAllValues, flagNextState);
-
-                callOnAllValues(this);
-            }
-        }
-
-        void backward()
-        {
-            static ulong nextFlagState;
-            nextFlagState++;
-
-            Value[] topo;
-            // Loops over all children Values recursively
-            recursive((v){ topo ~= v; }, nextFlagState);
-
-            grad = 1;
-            foreach_reverse (v; topo)
-                foreach (i, child; v.children)
-                    child.grad += v.local_grads[i] * v.grad;
-        }
-    }
 
     // Initialize the parameters, to store the knowledge of the model
     const n_layer = 1;      /// depth of the transformer neural network (number of layers)
@@ -352,7 +352,7 @@ void main()
     }
 }
 
-size_t weightedRandomIdx(Value, RNG)(Value[] weights, ref RNG rng)
+size_t weightedRandomIdx(RNG)(Value[] weights, ref RNG rng)
 {
     float r = uniform!"[]"(0.0f, weights.sumVals.data, rng);
     float curr = 0;
