@@ -181,10 +181,10 @@ void main()
         ).array;
     }
 
-    auto softmax(Value[] logits)
+    auto softmax(Range)(Range logits)
     {
         Value max_val = logits.maxElement!((a) => a.data);
-        auto exps = logits.map!((val) => (val - max_val).exp).array;
+        auto exps = logits.map!(val => (val - max_val).exp);
         Value total = exps.sumVals;
         return exps.map!((e) => e / total);
     }
@@ -335,8 +335,7 @@ void main()
         foreach(pos_id; 0 .. block_size)
         {
             auto logits = gpt(token_id, pos_id, keys, values);
-            //TODO: can softmax accept a range?
-            auto probs = softmax(logits.map!(l => l / temperature).array);
+            auto probs = softmax(logits.map!(l => l / temperature));
             token_id = probs.array.weightedRandomIdx(rng);
 
             if(token_id == BOS)
