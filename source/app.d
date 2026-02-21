@@ -261,7 +261,7 @@ void main()
     }
 
     // Let there be Adam, the blessed optimizer and its buffers
-    const float learningRate = 0.01, beta1 = 0.85, beta2 = 0.99, epsAdam = 1e-8;
+    const float learning_rate = 0.01, beta1 = 0.85, beta2 = 0.99, eps_adam = 1e-8;
     /// first moment buffer
     auto m = new float[params.length]; m[] = 0;
     /// second moment buffer
@@ -304,17 +304,19 @@ void main()
         // Backward the loss, calculating the gradients with respect to all model parameters
         loss.backward();
 
-    //~ # Adam optimizer update: update the model parameters based on the corresponding gradients
-    //~ lr_t = learning_rate * (1 - step / num_steps) # linear learning rate decay
-    //~ for i, p in enumerate(params):
-        //~ m[i] = beta1 * m[i] + (1 - beta1) * p.grad
-        //~ v[i] = beta2 * v[i] + (1 - beta2) * p.grad ** 2
-        //~ m_hat = m[i] / (1 - beta1 ** (step + 1))
-        //~ v_hat = v[i] / (1 - beta2 ** (step + 1))
-        //~ p.data -= lr_t * m_hat / (v_hat ** 0.5 + eps_adam)
-        //~ p.grad = 0
+        // Adam optimizer update: update the model parameters based on the corresponding gradients
+        const lr_t = learning_rate * (1.0f - float(step) / num_steps); /// linear learning rate decay
+        foreach(i, p; params)
+        {
+            m[i] = beta1 * m[i] + (1.0f - beta1) * p.grad;
+            v[i] = beta2 * v[i] + (1.0f - beta2) * p.grad ^^ 2;
+            const m_hat = m[i] / (1 - beta1 ^^ (step + 1));
+            const v_hat = v[i] / (1 - beta2 ^^ (step + 1));
+            p.data -= lr_t * m_hat / (v_hat ^^ 0.5f + eps_adam);
+            p.grad = 0;
+        }
 
-    //~ print(f"step {step+1:4d} / {num_steps:4d} | loss {loss.data:.4f}", end='\r')
+        writef("step %4d / %4d | loss %.4f\r", step + 1, num_steps, loss.data);
     }
 
 //~ # Inference: may the model babble back to us
