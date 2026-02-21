@@ -219,10 +219,8 @@ void main()
                 const hs = h * head_dim;
                 //TODO: remove magic:
                 auto q_h = q[hs .. hs+head_dim];
-                Value[] k_h;
-                Value[] v_h;
-                foreach(ref ki; keys)   k_h ~= ki[hs .. hs+head_dim];
-                foreach(ref vi; values) v_h ~= vi[hs .. hs+head_dim];
+                auto k_h = keys.map!((e) => e[hs .. hs + head_dim]);
+                auto v_h = values.map!((e) => e[hs .. hs + head_dim]);
 
                 //~ attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
                 //~ attn_weights = softmax(attn_logits)
