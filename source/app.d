@@ -14,13 +14,13 @@ import std;
 
 void main()
 {
-    auto rnd = MinstdRand0(42);
+    auto rng = MinstdRand0(42);
 
     // Let there be a Dataset `docs`: list[str] of documents (e.g. a list of names)
     //TODO: original code performs http-request, implement same?
     const docs = readText("names.txt")
         .splitLines
-        .randomShuffle(rnd)
+        .randomShuffle(rng)
         .array;
 
     writeln("num docs: ", docs.length);
@@ -98,7 +98,7 @@ void main()
     const head_dim = n_embd / n_head;   /// derived dimension of each head
 
     alias Matrix = Value[][];
-    static Matrix matrix(size_t nout, uint nin, float std=0.08)
+    Matrix matrix(size_t nout, uint nin, float std=0.08)
     {
         Value[][] ret;
         ret.length = nout;
@@ -108,7 +108,7 @@ void main()
             row.length = nin;
 
             foreach(ref cell; row)
-                cell = new Value(normalDistribution(std)); //FIXME: add random!
+                cell = new Value(randomGauss(rng, std));
         }
 
         return ret;
@@ -286,5 +286,7 @@ void main()
         //~ sample.append(uchars[token_id])
     //~ print(f"sample {sample_idx+1:2d}: {''.join(sample)}")
 }
+
+float randomGauss(RNG)(ref RNG rng, float std) => normalDistribution(std) * uniform!("[]")(0.0f, 1.0f, rng);
 
 auto sumVals(T)(T range) => range.fold!((a, b) => a + b);
