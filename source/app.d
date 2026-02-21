@@ -21,7 +21,11 @@ void main()
         download(`https://raw.githubusercontent.com/karpathy/makemore/988aa59/names.txt`, filename);
 
     /// Let there be a Dataset of documents (e.g. a list of names)
-    const docs = readText(filename)
+    const dchar[] fileBody = readText(filename)
+        .map!(e => std.uni.toLower(e))
+        .array;
+
+    const docs = fileBody
         .splitLines
         .randomShuffle(rng)
         .array;
@@ -29,7 +33,7 @@ void main()
     writeln("num docs: ", docs.length);
 
     // Let there be a Tokenizer to translate strings to sequences of integers ("tokens") and back
-    const uchars = docs.join.array.sort.uniq.array;
+    const uchars = fileBody.dup.sort.uniq.array;
     const BOS = uchars.length; /// token id for a special Beginning of Sequence (BOS) token
     const vocab_size = uchars.length + 1; /// total number of unique tokens, +1 is for BOS
     writeln("vocab size: ", vocab_size);
