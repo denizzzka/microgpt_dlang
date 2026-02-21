@@ -233,8 +233,8 @@ void main()
                 }
 
                 auto attn_weights = softmax(attn_logits);
-                auto head_out = head_dim.iota.map!((j) =>
-                    v_h.length.iota.map!((t) => attn_weights[t] * v_h[t][j])
+                auto head_out = v_h.map!((vhj) =>
+                    v_h.length.iota.map!((t) => attn_weights[t] * vhj[t])
                         .sumVals
                 );
 
