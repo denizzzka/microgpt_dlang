@@ -39,7 +39,7 @@ void main()
         private Value[] _children; //TODO: remove underscore
         private float[] _local_grads;
 
-        this(float data, Value[] children = null, float[] local_grads = null)
+        this(float data, Value[] children = null, float[] local_grads = null) pure
         {
             this.data = data;                // scalar value of this node calculated during forward pass
             this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
@@ -49,7 +49,7 @@ void main()
 
         auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
 
-        auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+        auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
         auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
         auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
         auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
@@ -98,7 +98,7 @@ void main()
     const head_dim = n_embd / n_head;   /// derived dimension of each head
 
     alias Matrix = Value[][];
-    Matrix matrix(size_t nout, uint nin, float std=0.08)
+    Matrix matrix(size_t nout, uint nin, float std=0.08) pure
     {
         Value[][] ret;
         ret.length = nout;
@@ -145,7 +145,7 @@ void main()
 
         Value[] getAll() => allMat[].joiner.join;
 
-        this()
+        this() pure
         {
             attn_wq = matrix(n_embd, n_embd);
             attn_wk = matrix(n_embd, n_embd);
@@ -185,7 +185,7 @@ void main()
         return exps.map!((e) => e / total);
     }
 
-    auto rmsnorm(R)(R x)
+    static auto rmsnorm(R)(R x) pure
     {
         auto ms = x.map!"a*a".sumVals / x.length;
         auto scale = (ms + 1e-5) ^^ -0.5; //TODO: use float.min_normal instead of 1e-5?
@@ -197,13 +197,15 @@ void main()
         auto tok_emb = wte[token_id];
         auto pos_emb = wpe[token_id];
 
-        auto x_ = zip(tok_emb, pos_emb).map!((e) => e[0] + e[1]); // joint token and position embedding
-        auto x = rmsnorm(x_); // note: not redundant due to backward pass via the residual connection
+        auto x_RENAMEME = zip(tok_emb, pos_emb).map!((e) => e[0] + e[1]); // joint token and position embedding
+        auto x = rmsnorm(x_RENAMEME).array; // note: not redundant due to backward pass via the residual connection
 
-    //~ for li in range(n_layer):
-        //~ # 1) Multi-head Attention block
-        //~ x_residual = x
-        //~ x = rmsnorm(x)
+        foreach(ref li; layers)
+        {
+            // 1) Multi-head Attention block
+            auto x_residual = x;
+            x = rmsnorm(x).array;
+
         //~ q = linear(x, state_dict[f'layer{li}.attn_wq'])
         //~ k = linear(x, state_dict[f'layer{li}.attn_wk'])
         //~ v = linear(x, state_dict[f'layer{li}.attn_wv'])
@@ -228,6 +230,7 @@ void main()
         //~ x = [xi.relu() for xi in x]
         //~ x = linear(x, state_dict[f'layer{li}.mlp_fc2'])
         //~ x = [a + b for a, b in zip(x, x_residual)]
+        }
 
     //~ logits = linear(x, state_dict['lm_head'])
     //~ return logits
@@ -302,4 +305,4 @@ float randomGauss(RNG)(ref RNG rng, float std)
     return z * std;
 }
 
-auto sumVals(T)(T range) => range.fold!((a, b) => a + b);
+auto sumVals(T)(T range) pure => range.fold!((a, b) => a + b);
