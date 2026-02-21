@@ -192,7 +192,7 @@ void main()
         return x.map!((a) => a * scale);
     }
 
-    auto gpt(in ushort token_id, in ushort pos_id, Value[] keys, Value[] values)
+    auto gpt(in ushort token_id, in ushort pos_id, Matrix keys, Matrix values)
     {
         auto tok_emb = wte[token_id];
         auto pos_emb = wpe[token_id];
@@ -219,8 +219,11 @@ void main()
                 const hs = h * head_dim;
                 //TODO: remove magic:
                 auto q_h = q[hs .. hs+head_dim];
-                //~ k_h = [ki[hs:hs+head_dim] for ki in keys[li]]
-                //~ v_h = [vi[hs:hs+head_dim] for vi in values[li]]
+                Value[] k_h;
+                Value[] v_h;
+                foreach(ref ki; keys)   k_h ~= ki[hs .. hs+head_dim];
+                foreach(ref vi; values) v_h ~= vi[hs .. hs+head_dim];
+
                 //~ attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
                 //~ attn_weights = softmax(attn_logits)
                 //~ head_out = [sum(attn_weights[t] * v_h[t][j] for t in range(len(v_h))) for j in range(head_dim)]
