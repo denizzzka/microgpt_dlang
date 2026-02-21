@@ -241,8 +241,11 @@ void main()
 
                 x_attn ~= head_out.array;
             }
-        //~ x = linear(x_attn, state_dict[f'layer{li}.attn_wo'])
-        //~ x = [a + b for a, b in zip(x, x_residual)]
+
+            // TODO: Why x used again?
+            x = linear(x_attn, li.attn_wo);
+            x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
+
         //~ # 2) MLP block
         //~ x_residual = x
         //~ x = rmsnorm(x)
