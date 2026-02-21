@@ -68,24 +68,29 @@ void main()
         auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
         auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
 
+        private bool visitedFlag;
+        private void recursive(void delegate(Value) callOnAllValues, bool flagNextState)
+        {
+            if(visitedFlag != flagNextState)
+            {
+                visitedFlag = flagNextState;
+
+                foreach(child; children)
+                    child.recursive(callOnAllValues, flagNextState);
+
+                callOnAllValues(this);
+            }
+        }
+
         void backward()
         {
+            // set visited flag
+            // TODO: just save flag state on each iteration
+            recursive((v){}, true);
+
             Value[] topo;
-            bool[const Value] visited;
-
-            void buildTopo(Value v)
-            {
-                if(!(v in visited))
-                {
-                    visited[v] = true;
-
-                    foreach(child; v.children)
-                        buildTopo(child);
-
-                    topo ~= v;
-                }
-            }
-            buildTopo(this);
+            // also resets flag
+            recursive((v){ topo ~= v; }, false);
 
             grad = 1;
             foreach_reverse (v; topo)
