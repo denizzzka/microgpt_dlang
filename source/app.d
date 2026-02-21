@@ -47,17 +47,19 @@ void main()
             this.local_grads = local_grads; // local derivative of this node w.r.t. its children
         }
 
+        /// Support of "Value x float" operations
         auto opBinary(string s)(float other) if(s != "^^") => opBinary!s(new Value(other));
 
+        auto opUnary(string s)() if(s == "-") => this * -1;
+
         auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+        auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
         auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
         auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
+        auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
         auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
         auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
         auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
-        auto opUnary(string s)() if(s == "-") => this * -1;
-        auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
-        auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
 
         void backward()
         {
