@@ -271,11 +271,17 @@ void main()
     const num_steps = 1000; /// number of training steps
     foreach(step; 0 .. num_steps)
     {
-
-    //~ # Take single document, tokenize it, surround it with BOS special token on both sides
-    //~ doc = docs[step % len(docs)]
-    //~ tokens = [BOS] + [uchars.index(ch) for ch in doc] + [BOS]
-    //~ n = min(block_size, len(tokens) - 1)
+        // Take single document, tokenize it, surround it with BOS special token on both sides
+        auto doc = docs[step % docs.length];
+        size_t[] tokens = [BOS];
+        foreach(ch; doc)
+        {
+            auto r = uchars.countUntil(ch);
+            enforce(r + 1, "index not found for char: "~ch.to!string);
+            tokens ~= r;
+        }
+        tokens ~= BOS;
+        auto n = min(block_size, tokens.length - 1);
 
     //~ # Forward the token sequence through the model, building up the computation graph all the way to the loss
     //~ keys, values = [[] for _ in range(n_layer)], [[] for _ in range(n_layer)]
