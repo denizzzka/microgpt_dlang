@@ -193,7 +193,7 @@ void main()
         return x.map!((a) => a * scale);
     }
 
-    Value[] gpt(in ushort token_id, in ushort pos_id, Matrix keys, Matrix values)
+    Value[] gpt(in ushort token_id, in ushort pos_id, Matrix[] keys, Matrix[] values)
     {
         auto tok_emb = wte[token_id];
         auto pos_emb = wpe[token_id];
@@ -201,18 +201,18 @@ void main()
         auto x_RENAMEME = zip(tok_emb, pos_emb).map!((e) => e[0] + e[1]); // joint token and position embedding
         auto x = rmsnorm(x_RENAMEME).array; // note: not redundant due to backward pass via the residual connection
 
-        foreach(ref li; layers)
+        foreach(li, ref layer; layers)
         {
             // 1) Multi-head Attention block
             auto x_residual = x;
             x = rmsnorm(x).array;
 
-            auto q = linear(x, li.attn_wq);
-            auto k = linear(x, li.attn_wk);
-            auto v = linear(x, li.attn_wv);
+            auto q = linear(x, layer.attn_wq);
+            auto k = linear(x, layer.attn_wk);
+            auto v = linear(x, layer.attn_wv);
 
-            keys ~= k;
-            values ~= v;
+            keys[li] ~= k;
+            values[li] ~= v;
 
             Value[] x_attn;
             foreach(h; 0 .. n_head)
@@ -221,8 +221,8 @@ void main()
                 const hs = h * head_dim;
                 //TODO: remove magic:
                 auto q_h = q[hs .. hs+head_dim];
-                auto k_h = keys.map!((e) => e[hs .. hs + head_dim]);
-                auto v_h = values.map!((e) => e[hs .. hs + head_dim]);
+                auto k_h = keys[li].map!((e) => e[hs .. hs + head_dim]);
+                auto v_h = values[li].map!((e) => e[hs .. hs + head_dim]);
 
                 // Dot product of query against all past keys, scaled to prevent vanishing gradients
                 Value[] attn_logits;
@@ -244,15 +244,15 @@ void main()
             }
 
             // TODO: Why x used again?
-            x = linear(x_attn, li.attn_wo);
+            x = linear(x_attn, layer.attn_wo);
             x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
 
             // 2) MLP block
             x_residual = x;
             x = rmsnorm(x).array;
-            x = linear(x, li.mlp_fc1);
+            x = linear(x, layer.mlp_fc1);
             x = x.map!((xi) => xi.relu()).array;
-            x = linear(x, li.mlp_fc2);
+            x = linear(x, layer.mlp_fc2);
             x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
         }
 
