@@ -210,9 +210,8 @@ void main()
             auto k = linear(x, li.attn_wk);
             auto v = linear(x, li.attn_wv);
 
-            //TODO:
-            //~ keys[li].append(k)
-            //~ values[li].append(v)
+            keys ~= k;
+            values ~= v;
 
             Value[] x_attn;
             foreach(h; 0 .. n_head)
