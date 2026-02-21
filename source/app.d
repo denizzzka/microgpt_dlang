@@ -193,7 +193,7 @@ void main()
         return x.map!((a) => a * scale);
     }
 
-    auto gpt(in ushort token_id, in ushort pos_id, Matrix keys, Matrix values)
+    Value[] gpt(in ushort token_id, in ushort pos_id, Matrix keys, Matrix values)
     {
         auto tok_emb = wte[token_id];
         auto pos_emb = wpe[token_id];
@@ -256,8 +256,8 @@ void main()
             x = zip(x, x_residual).map!((e) => e[0] + e[1]).array;
         }
 
-    //~ logits = linear(x, state_dict['lm_head'])
-    //~ return logits
+        auto logits = linear(x, lm_head);
+        return logits;
     }
 
 //~ # Let there be Adam, the blessed optimizer and its buffers
