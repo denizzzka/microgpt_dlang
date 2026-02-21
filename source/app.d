@@ -41,8 +41,8 @@ void main()
 
         this(float data, Value[] children = null, float[] local_grads = null) pure
         {
-            this.data = data;                // scalar value of this node calculated during forward pass
-            this.grad = 0;                   // derivative of the loss w.r.t. this node, calculated in backward pass
+            this.data = data;               // scalar value of this node calculated during forward pass
+            this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
             this.children = children;       // children of this node in the computation graph
             this.local_grads = local_grads; // local derivative of this node w.r.t. its children
         }
@@ -56,13 +56,8 @@ void main()
         auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
         auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
         auto opUnary(string s)() if(s == "-") => this * -1;
-        //~ def __radd__(self, other): return self + other
-        //~ def __sub__(self, other): return self + (-other)
         auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
-        //~ def __rsub__(self, other): return other + (-self)
-        //~ def __rmul__(self, other): return self * other
         auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
-        //~ def __rtruediv__(self, other): return other * self**-1
 
         void backward()
         {
