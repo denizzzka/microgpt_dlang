@@ -216,13 +216,22 @@ void main()
             Value[] x_attn;
             foreach(h; 0 .. n_head)
             {
+                // Slice out this head's portion of q, k, v
                 const hs = h * head_dim;
                 //TODO: remove magic:
                 auto q_h = q[hs .. hs+head_dim];
                 auto k_h = keys.map!((e) => e[hs .. hs + head_dim]);
                 auto v_h = values.map!((e) => e[hs .. hs + head_dim]);
 
-                //~ attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
+                // Dot product of query against all past keys, scaled to prevent vanishing gradients
+                Value[] attn_logits;
+                const divider = head_dim ^^ 0.5f;
+                foreach(t; 0 .. k_h.length)
+                {
+                    auto s = head_dim.iota.map!((j) => q_h[j] * k_h[t][j]).sumVals;
+                    attn_logits ~= s / divider;
+                }
+
                 //~ attn_weights = softmax(attn_logits)
                 //~ head_out = [sum(attn_weights[t] * v_h[t][j] for t in range(len(v_h))) for j in range(head_dim)]
                 //~ x_attn.extend(head_out)
