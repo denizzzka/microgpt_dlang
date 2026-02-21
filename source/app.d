@@ -325,7 +325,7 @@ void main()
             p.grad = 0;
         }
 
-        writef("step %4d / %4d | loss %.4f\r", step + 1, num_steps, loss.data);
+        writef("step %4d / %4d | loss %.4f        \r", step + 1, num_steps, loss.data);
     }
 
     // Inference: may the model babble back to us
