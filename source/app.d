@@ -260,10 +260,12 @@ void main()
         return logits;
     }
 
-//~ # Let there be Adam, the blessed optimizer and its buffers
-//~ learning_rate, beta1, beta2, eps_adam = 0.01, 0.85, 0.99, 1e-8
-//~ m = [0.0] * len(params) # first moment buffer
-//~ v = [0.0] * len(params) # second moment buffer
+    // Let there be Adam, the blessed optimizer and its buffers
+    const float learningRate = 0.01, beta1 = 0.85, beta2 = 0.99, epsAdam = 1e-8;
+    /// first moment buffer
+    auto m = new float[params.length]; m[] = 0;
+    /// second moment buffer
+    auto v = new float[params.length]; v[] = 0;
 
 //~ # Repeat in sequence
 //~ num_steps = 1000 # number of training steps
