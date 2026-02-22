@@ -21,6 +21,7 @@ class Value
     private Value[maxChildren] children;
     private immutable(float)[maxChildren] local_grads;
 
+    // Constructors accept static arrays for performance reasons
     this(float data) pure => this(data, [null, null], [0, 0]);
     this(float data, Value[1] child, float[1] local_grad) pure => this(data, [child[0], null], [local_grad[0], 0]);
 
