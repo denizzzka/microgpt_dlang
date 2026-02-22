@@ -21,7 +21,10 @@ class Value
     private Value[maxChildren] children;
     private immutable(float)[maxChildren] local_grads;
 
-    this(float data, Value[] children = null, float[] local_grads = null) pure
+    this(float data) pure => this(data, [null, null], [0, 0]);
+    this(float data, Value[1] child, float[1] local_grad) pure => this(data, [child[0], null], [local_grad[0], 0]);
+
+    this(float data, Value[maxChildren] children, float[maxChildren] local_grads) pure
     {
         this.data = data;               // scalar value of this node calculated during forward pass
         this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
