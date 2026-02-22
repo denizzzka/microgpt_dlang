@@ -73,7 +73,7 @@ class Value
 
         // Trick to speed up
         // TODO: get rid of a "topo" variable: can we use grad directly as recursive() argument?
-        Value[120_000] topo = void;
+        Value[200_000] topo = void;
         size_t curr;
 
         // Loops over all children Values recursively
