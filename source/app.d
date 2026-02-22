@@ -27,8 +27,8 @@ class Value
 
     this(float data, Value[maxChildren] children, float[maxChildren] local_grads) pure
     {
-        this.data = data;               // scalar value of this node calculated during forward pass
-        this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
+        this.data = data;   // scalar value of this node calculated during forward pass
+        this.grad = 0;      // derivative of the loss w.r.t. this node, calculated in backward pass
 
         assert(children.length == local_grads.length);
         this.children[0 .. children.length] = children;       // children of this node in the computation graph
