@@ -71,12 +71,16 @@ class Value
         static ulong nextFlagState;
         nextFlagState++;
 
-        Value[] topo;
+        // Trick to speed up
+        // TODO: get rid of a "topo" variable: can we use grad directly as recursive() argument?
+        Value[120_000] topo = void;
+        size_t curr;
+
         // Loops over all children Values recursively
-        recursive((v){ topo ~= v; }, nextFlagState);
+        recursive((v){ topo[curr] = v; curr++; }, nextFlagState);
 
         grad = 1;
-        foreach_reverse (v; topo)
+        foreach_reverse (v; topo[0 .. curr])
             foreach (i, child; v.children)
             {
                 if(child is null) break;
