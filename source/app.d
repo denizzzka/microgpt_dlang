@@ -17,15 +17,18 @@ class Value
 {
     float data;
     float grad;
-    private Value[] children;
-    private float[] local_grads;
+    enum maxChildren = 2;
+    private Value[maxChildren] children;
+    private immutable(float)[maxChildren] local_grads;
 
     this(float data, Value[] children = null, float[] local_grads = null) pure
     {
         this.data = data;               // scalar value of this node calculated during forward pass
         this.grad = 0;                  // derivative of the loss w.r.t. this node, calculated in backward pass
-        this.children = children;       // children of this node in the computation graph
-        this.local_grads = local_grads; // local derivative of this node w.r.t. its children
+
+        assert(children.length == local_grads.length);
+        this.children[0 .. children.length] = children;       // children of this node in the computation graph
+        this.local_grads[0 .. children.length] = local_grads; // local derivative of this node w.r.t. its children
     }
 
     /// Support of "Value x float" operations
@@ -50,7 +53,10 @@ class Value
             visitedFlag = flagNextState;
 
             foreach(child; children)
+            {
+                if(child is null) break;
                 child.recursive(callOnAllValues, flagNextState);
+            }
 
             callOnAllValues(this);
         }
@@ -68,7 +74,10 @@ class Value
         grad = 1;
         foreach_reverse (v; topo)
             foreach (i, child; v.children)
+            {
+                if(child is null) break;
                 child.grad += v.local_grads[i] * v.grad;
+            }
     }
 }
 
