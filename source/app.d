@@ -15,24 +15,32 @@ import std;
 /// Let there be Autograd to recursively apply the chain rule through a computation graph
 class Value
 {
-    float data;
-    float grad;
+    float data; /// scalar value of this node calculated during forward pass
+    float grad = 0; /// derivative of the loss w.r.t. this node, calculated in backward pass
     enum maxChildren = 2;
-    private Value[maxChildren] children;
-    private immutable(float)[maxChildren] local_grads;
+    private Value[maxChildren] children;    /// children of this node in the computation graph
+    private immutable(float)[maxChildren] local_grads = 0;  /// local derivative of this node w.r.t. its children
 
-    // Constructors accept static arrays for performance reasons
-    this(float data) pure { this(data, [null, null], [0, 0]); }
-    this(float data, Value[1] child, float[1] local_grad) pure { this(data, [child[0], null], [local_grad[0], 0]); }
+    this(float data, Value child, float local_grad) pure
+    {
+        children[0] = child;
+        local_grads[0] = local_grad;
 
+        this(data);
+    }
+
+    // Constructor accepts static arrays for performance reasons
     this(float data, Value[maxChildren] children, float[maxChildren] local_grads) pure
     {
-        this.data = data;   // scalar value of this node calculated during forward pass
-        this.grad = 0;      // derivative of the loss w.r.t. this node, calculated in backward pass
+        this.children = children;
+        this.local_grads = local_grads;
 
-        assert(children.length == local_grads.length);
-        this.children[0 .. children.length] = children;       // children of this node in the computation graph
-        this.local_grads[0 .. children.length] = local_grads; // local derivative of this node w.r.t. its children
+        this(data);
+    }
+
+    this(float data) pure
+    {
+        this.data = data;
     }
 
     /// Support of "Value x float" operations
@@ -43,11 +51,11 @@ class Value
     auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
     auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
     auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
-    auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, [this], [other * this.data ^^ (other-1)]);
+    auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, this, other * this.data ^^ (other-1));
     auto opBinary(string s)(Value other) if(s == "/") => this * other^^-1;
-    auto log() => new Value(std.math.log(data), [this], [1.0f / data]);
-    auto exp() => new Value(std.math.exp(data), [this], [std.math.exp(data)]);
-    auto relu() => new Value(data < 0 ? 0 : data, [this], [data < 0 ? 0 : 1]);
+    auto log() => new Value(std.math.log(data), this, 1.0f / data);
+    auto exp() => new Value(std.math.exp(data), this, std.math.exp(data));
+    auto relu() => new Value(data < 0 ? 0 : data, this, data < 0 ? 0 : 1);
 
     private ulong visitedFlag;
     private void recursive(void delegate(Value) callOnAllValues, ulong flagNextState)
