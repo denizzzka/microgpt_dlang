@@ -382,5 +382,8 @@ float randomGauss(RNG)(ref RNG rng, float std)
 
 auto sumValsST(T)(T range) pure => range.fold!((a, b) => a + b);
 
-/// Multithread sum()
+/// Multithreaded sum()
 auto sumVals(T)(T range) => taskPool.fold!((Value a, Value b) => a + b)(range);
+
+/// Angry multithreaded map()
+auto amap(alias ARG, T)(T range) => taskPool.amap!ARG(range);
