@@ -382,18 +382,5 @@ float randomGauss(RNG)(ref RNG rng, float std)
 
 auto sumValsST(T)(T range) pure => range.fold!((a, b) => a + b);
 
-auto sumVals(Value[] arr)
-{
-    if(arr.length > 1000)
-        return sumValsMT(arr, arr.length / taskPool.size);
-    else
-        return sumValsST(arr);
-}
-
-auto sumValsMT(T)(T range, size_t chunkSize)
-{
-    auto to_process = range.chunks(chunkSize);
-    auto results = taskPool.amap!sumValsST(to_process);
-
-    return results.sumValsST;
-}
+/// Multithread sum()
+auto sumVals(T)(T range) => taskPool.fold!((Value a, Value b) => a + b)(range);
