@@ -15,13 +15,15 @@ import std;
 /// Let there be Autograd to recursively apply the chain rule through a computation graph
 class Value
 {
+    private static Value[] topo;
+
     float data; /// scalar value of this node calculated during forward pass
     float grad = 0; /// derivative of the loss w.r.t. this node, calculated in backward pass
     enum maxChildren = 2;
     private Value[maxChildren] children;    /// children of this node in the computation graph
     private immutable(float)[maxChildren] local_grads = 0;  /// local derivative of this node w.r.t. its children
 
-    this(float data, Value child, float local_grad) pure
+    this(float data, Value child, float local_grad)
     {
         children[0] = child;
         local_grads[0] = local_grad;
@@ -30,7 +32,7 @@ class Value
     }
 
     // Constructor accepts static arrays for performance reasons
-    this(float data, Value[maxChildren] children, float[maxChildren] local_grads) pure
+    this(float data, Value[maxChildren] children, float[maxChildren] local_grads)
     {
         this.children = children;
         this.local_grads = local_grads;
@@ -38,9 +40,10 @@ class Value
         this(data);
     }
 
-    this(float data) pure
+    this(float data)
     {
         this.data = data;
+        topo ~= this;
     }
 
     /// Support of "Value x float" operations
@@ -48,7 +51,7 @@ class Value
 
     auto opUnary(string s)() if(s == "-") => this * -1;
 
-    auto opBinary(string s)(Value other) pure if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
+    auto opBinary(string s)(Value other) if(s == "+") => new Value(this.data + other.data, [this, other], [1, 1]);
     auto opBinary(string s)(Value other) if(s == "-") => this + (-other);
     auto opBinary(string s)(Value other) if(s == "*") => new Value(this.data * other.data, [this, other], [other.data, this.data]);
     auto opBinary(string s)(float other) if(s == "^^") => new Value(this.data ^^ other, this, other * this.data ^^ (other-1));
@@ -57,38 +60,14 @@ class Value
     auto exp() => new Value(std.math.exp(data), this, std.math.exp(data));
     auto relu() => new Value(data < 0 ? 0 : data, this, data < 0 ? 0 : 1);
 
-    private ulong visitedFlag;
-    private void recursive(void delegate(Value) callOnAllValues, ulong flagNextState)
-    {
-        if(visitedFlag != flagNextState)
-        {
-            visitedFlag = flagNextState;
-
-            foreach(child; children)
-            {
-                if(child is null) break;
-                child.recursive(callOnAllValues, flagNextState);
-            }
-
-            callOnAllValues(this);
-        }
-    }
-
     void backward()
     {
         static ulong nextFlagState;
         nextFlagState++;
 
-        // Trick to speed up
-        // TODO: get rid of a "topo" variable: can we use grad directly as recursive() argument?
-        Value[200_000] topo = void;
-        size_t curr;
-
-        // Loops over all children Values recursively
-        recursive((v){ topo[curr] = v; curr++; }, nextFlagState);
-
         grad = 1;
-        foreach_reverse (v; topo[0 .. curr])
+
+        foreach_reverse(v; topo)
             foreach (i, child; v.children)
             {
                 if(child is null) break;
@@ -129,7 +108,7 @@ void main()
     const head_dim = n_embd / n_head;   /// derived dimension of each head
 
     alias Matrix = Value[][];
-    Matrix matrix(size_t nout, uint nin, float std=0.08) pure
+    Matrix matrix(size_t nout, uint nin, float std=0.08)
     {
         Value[][] ret;
         ret.length = nout;
@@ -176,7 +155,7 @@ void main()
 
         Value[] getAll() => allMat[].joiner.join;
 
-        this() pure
+        this()
         {
             attn_wq = matrix(n_embd, n_embd);
             attn_wk = matrix(n_embd, n_embd);
@@ -217,7 +196,7 @@ void main()
     }
 
     //TODO: maybe it is worth to return array
-    static auto rmsnorm(R)(R x) pure
+    static auto rmsnorm(R)(R x)
     {
         auto ms = x.map!"a*a".sumValsST / x.length;
         auto scale = (ms + 1e-5) ^^ -0.5; //TODO: use float.min_normal instead of 1e-5?
@@ -298,6 +277,8 @@ void main()
     /// second moment buffer
     auto v = new float[params.length]; v[] = 0;
 
+    const topoEnd = Value.topo.length;
+
     // Repeat in sequence
     const num_steps = 1000; /// number of training steps
     foreach(step; 0 .. num_steps)
@@ -348,6 +329,8 @@ void main()
         }
 
         writef("step %4d / %4d | loss %.4f        \r", step + 1, num_steps, loss.data);
+
+        Value.topo.length = topoEnd;
     }
 
     // Inference: may the model babble back to us
@@ -403,7 +386,7 @@ float randomGauss(RNG)(ref RNG rng, float std)
     return z * std;
 }
 
-auto sumValsST(T)(T range) pure => range.fold!((a, b) => a + b);
+auto sumValsST(T)(T range) => range.fold!((a, b) => a + b);
 
 //~ /// Multithreaded sum()
 //~ auto sumVals(T)(T range) => taskPool.fold!((Value a, Value b) => a + b)(range);
