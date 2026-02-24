@@ -13,7 +13,7 @@ https://github.com/denizzzka/
 import std;
 
 /// Let there be Autograd to recursively apply the chain rule through a computation graph
-class Value
+final class Value
 {
     private static Value[] topo;
 
@@ -135,7 +135,7 @@ void main()
         getAllParams(wte), getAllParams(wpe), getAllParams(lm_head),
     ].join;
 
-    class Layer
+    final class Layer
     {
         union
         {
